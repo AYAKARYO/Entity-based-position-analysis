@@ -24,6 +24,7 @@ def train(epochs):
             # output = model(input_)
             output = model(input_, entity, events)
             loss = criterion(output, label)  # 计算loss
+            # print(output)
             loss.backward()  # 反向传播
             optimizer.step()  # 更新模型参数
             loss_sum += loss.item()  # 累积loss
@@ -69,26 +70,74 @@ def evaluate(epoch):
         true_labels = []
         for batch in test_iter:
             input_, entity, aspect, label = batch
+            # print(label)
             true_labels.append(label)
+            # print(true_labels)
             predicted_label = model(input_, entity, aspect)
+            # print(predicted_label.argmax(1))
             predicted_labels.append(predicted_label)
             loss = criterion(predicted_label, label)  # 计算loss
             total_acc += (predicted_label.argmax(1) == label).sum().item()  # 累计正确预测数
             total_count += label.size(0)  # 累积总数
             loss_sum += loss.item()  # 累积loss
         print(str(epoch + 1) + ":")
+        print("test_total_count:", total_count)
         print("test_loss:", loss_sum / len(test_iter))
-        predicted_labels = predicted_label.argmax(1).detach().cpu().numpy()
-        true_labels = label.detach().cpu().numpy()
-        f1 = f1_score(true_labels, predicted_labels, average="macro", zero_division=1)
-        recall = recall_score(
-            true_labels, predicted_labels, average="macro", zero_division=1
-        )
-        cm = confusion_matrix(true_labels, predicted_labels)
+        true_labels_flat = [item for sublist in true_labels for tensor in sublist for item in
+                            tensor.view(-1).cpu().numpy()]
+        print("true_labels_flat:", true_labels_flat)
+        # print(predicted_labels)
+        predicted_labels_flat = [item for sublist in predicted_labels for tensor in sublist for item in
+                            tensor.view(-1).cpu().numpy()]
+        print("predicted_labels_flat:", predicted_labels_flat)
 
+        arr = np.array(predicted_labels_flat)
+
+        max_indices = []
+        for i in range(0, len(arr), 3):
+            max_index = np.argmax(arr[i:i + 3])
+            max_indices.append(max_index)
+        print("pre_max_indices:", max_indices)
+        max_indices = max_indices[:263] #多了一个，去掉最后一个
+
+        # print("predicted_label.argmax(1):", predicted_label.argmax(1))
+        '''predicted_labels = predicted_label.argmax(1).detach().cpu().numpy()
+        true_labels = label.detach().cpu().numpy()
+        print("predicted_labels:", predicted_labels)
+        print("true_labels:", true_labels)'''
+        f1 = f1_score(true_labels_flat, max_indices[:263], average="macro", zero_division=1)
+        recall = recall_score(
+            true_labels_flat, max_indices[:263], average="macro", zero_division=1
+        )
+        cm = confusion_matrix(true_labels_flat, max_indices)
+
+        # 创建一个用于 x 轴的索引数组
+        indices = range(len(true_labels_flat))
+
+        # 创建 Matplotlib Figure 对象
+        fig, ax = plt.subplots()
+        ax.plot(indices, true_labels_flat, label='True Labels')
+        ax.plot(indices, max_indices, label='Max Indices')
+        ax.set_xlabel('Index')
+        ax.set_ylabel('Value')
+        ax.legend()
+        fig.set_size_inches(15, 3)
+        # plt.show()
+        # 将 Matplotlib Figure 对象添加到 TensorBoard 日志
+        #writer = SummaryWriter()
+        writer.add_figure('Arrays Comparison', fig, epoch+1)
+
+        for i in range(len(true_labels_flat)):
+            writer.add_scalars('Arrays Comparison', {'True Labels': true_labels_flat[i], 'Max Indices': max_indices[i]},
+                               i + 1)
+        cnt = 0
+        for i in range(263):
+            if true_labels_flat[i] == max_indices[i]:
+                cnt+=1
         print(f"召回率: {recall}")
         print(f"F1分数: {f1}")
         print(f"混淆矩阵: \n{cm}")
+        print("cnt/263:", cnt / 263)
     model.train()
     return total_acc / total_count, recall, f1, cm
 
