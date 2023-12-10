@@ -11,11 +11,13 @@ with open("test_data\\all.json", encoding="utf-8") as f:
     train_list = []
     dev_list = []
     test_list = []
-    for i in range(2100):
+    train_num = int(file.__len__() * 0.7)
+    dev_num = int(file.__len__() * 0.9)
+    for i in range(train_num):
         train_list.append(file[i])
-    for i in range(2100, 2600):
+    for i in range(train_num, dev_num):
         dev_list.append(file[i])
-    for i in range(2600, 2863):
+    for i in range(dev_num, file.__len__()):
         test_list.append(file[i])
     json.dump(train_list, train)
     json.dump(dev_list, dev)

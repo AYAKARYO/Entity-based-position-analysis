@@ -27,7 +27,6 @@ if __name__ == "__main__":
     test_dataset = MyDataset(config["data"]["test_path"])
     train_dataset = MyDataset(config["data"]["train_path"])
     dev_dataset = MyDataset(config["data"]["dev_path"])
-
     batch_size = int(config["data"]["batch_size"])
     train_iter = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_iter = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
