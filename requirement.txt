@@ -1,0 +1,13 @@
+nltk
+json
+pickle
+gensim
+numpy
+configparser
+torch
+sklearn
+tensorboardX
+matplotlib
+seaborn
+requests
+beautifulsoup4

@@ -32,18 +32,26 @@ if __name__ == "__main__":
         for line in tokenized_word_list:
             for word in line:
                 if word not in vocab:
-                    vocab[word] = vocab.__len__()
+                    vocab[word] = 0
+                else:
+                    vocab[word] += 1
+        temp = {}
+        temp[PAD] = 0
+        temp[UNK] = 1
+        for item in vocab:
+            if vocab[item] > 2:
+                temp[item] = temp.__len__()
         model = word2vec.Word2Vec(
-            sentences=vocab,
+            sentences=temp,
             size=int(config["model"]["input_size"]),
             window=int(config["model"]["windows"]),
             min_count=int(config["model"]["min_count"]),
         )
         model.train(
-            sentences=vocab, total_examples=model.corpus_count, epochs=model.epochs
+            sentences=temp, total_examples=model.corpus_count, epochs=model.epochs
         )
-        emb_matrix = np.zeros((len(vocab), int(config["model"]["input_size"])))
+        emb_matrix = np.zeros((len(temp), int(config["model"]["input_size"])))
         for i, word in enumerate(model.wv.vocab):
             emb_matrix[i] = model.wv[word]
         pickle.dump(emb_matrix, open(config["data"]["emb_path"], mode="wb"))
-        pickle.dump(vocab, open(config["data"]["vocabulary_path"], "wb"))
+        pickle.dump(temp, open(config["data"]["vocabulary_path"], "wb"))
